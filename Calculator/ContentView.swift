@@ -47,7 +47,7 @@ struct ContentView: View {
                     CalculatorButton(title:"+", action: {appendToDisplay("+")})
                 }
                 HStack(spacing: 10){
-                    CalculatorButton(title:"=", action: {appendToDisplay("=")})
+                    CalculatorButton(title:"=", action: {calculateMain()})
                     CalculatorButton(title:"0", action: {appendToDisplay("0")})
                     CalculatorButton(title:",", action: {appendToDisplay(",")})
                     CalculatorButton(title:"-", action: {appendToDisplay("-")})
@@ -55,13 +55,12 @@ struct ContentView: View {
             }
         }
         .padding()
-        .background(Color.purple.opacity(0.5))
-        .edgesIgnoringSafeArea(.all)
     }
+    //  buttons actions
     private func clearDisplay() -> Void{
         displayText = "0"
     }
-    private func clearOnedigit() -> Void{//displayText[displayText.index(displayText.startIndex, offsetBy: 1)] != "0"
+    private func clearOnedigit() -> Void{
         if displayText.first == "-" && displayText.count < 3{
             clearDisplay()
         }else if displayText != "0" && displayText.count > 1{
@@ -70,23 +69,64 @@ struct ContentView: View {
             displayText = "0"
         }
     }
-    private func changeSign() -> Void{
+    private func changeSign() -> Void{//    make a case that usr can change sign later after "*/+-"
         if displayText.first == "-"{
             displayText.remove(at: displayText.startIndex)
-        }else if displayText == "0" && displayText.count == 1{
-            
-        }else{
+        }else if displayText.first != "-" && displayText.count > 1{// -0 case
             displayText.insert("-", at: displayText.startIndex)
         }
     }
     private func appendToDisplay(_ digit: String){
-        if displayText == "0" {
+        if displayText == "0" && digit == "%"{
+            displayText += digit
+        }else if displayText == "0" {
             displayText = digit
-        } else {
+        }else {
             displayText += digit
         }
     }
-    
+    //  math actions
+    private func percent(number: String, percentIndex: Int) {
+        var num = number.replacingOccurrences(of: "%", with: "")
+        if let numDouble = Double(num) {
+            let result = numDouble / 100
+            displayText = String(result)
+        } else {
+            displayText = "Error"
+        }
+    }
+    private func divide() -> Void{
+        
+    }
+    private func multiply() -> Void{
+        
+    }
+    private func plus() -> Void{
+        
+    }
+    private func minus() -> Void{
+        
+    }
+    //  calculate func
+    private func calculateMain() {
+        let charExample = "x/+-"
+        for (i, char) in displayText.enumerated() {
+            if char == "%" {
+                var subDisplayText: String = ""
+                for j in stride(from: i - 1, to: -1, by: -1) {
+                    let index = displayText.index(displayText.startIndex, offsetBy: j)
+                    if charExample.contains(displayText[index]) || j == 0 {
+                        let startindex = displayText.index(displayText.startIndex, offsetBy: j == 0 ? 0 : j + 1)
+                        let endindex = displayText.index(displayText.startIndex, offsetBy: i)
+                        subDisplayText = String(displayText[startindex..<endindex])
+                        percent(number: subDisplayText, percentIndex: i)
+                        break
+                    }
+                }
+            }
+        }
+    }
+
 }
 
 struct CalculatorButton: View {
