@@ -55,6 +55,8 @@ struct ContentView: View {
             }
         }
         .padding()
+        .background(Color.purple.opacity(0.5))
+        .edgesIgnoringSafeArea(.all)
     }
     private func clearDisplay() -> Void{
         displayText = "0"
