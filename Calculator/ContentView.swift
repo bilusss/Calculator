@@ -87,7 +87,7 @@ struct ContentView: View {
     }
     //  math actions
     private func percent(number: String, percentIndex: Int) {
-        var num = number.replacingOccurrences(of: "%", with: "")
+        let num = number.replacingOccurrences(of: "%", with: "")
         if let numDouble = Double(num) {
             let result = numDouble / 100
             displayText = String(result)
