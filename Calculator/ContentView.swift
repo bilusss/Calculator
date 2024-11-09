@@ -10,8 +10,11 @@ import SwiftUI
 struct ContentView: View {
     // Przechowujemy wyświetlaną wartość
     @State private var displayText : String = "0"
-    private var digitsArray : [String] = []
-    private var operatorsArray : [String] = []
+    @State private var displayTextArray : [Character] = []
+    
+    //private var digitsArray : [String] = []
+    //private var operatorsArray : [String] = []
+    let charExample = "x/+-"
     
     var body : some View {
         VStack(spacing: 20){
@@ -47,7 +50,7 @@ struct ContentView: View {
                     CalculatorButton(title:"+", action: {appendToDisplay("+")})
                 }
                 HStack(spacing: 10){
-                    CalculatorButton(title:"=", action: {calculateMain()})
+                    CalculatorButton(title:"=", action: {calculateFirst()})
                     CalculatorButton(title:"0", action: {appendToDisplay("0")})
                     CalculatorButton(title:",", action: {appendToDisplay(",")})
                     CalculatorButton(title:"-", action: {appendToDisplay("-")})
@@ -56,47 +59,112 @@ struct ContentView: View {
         }
         .padding()
     }
+    private func updateDisplayText() -> Void {
+        displayText = String(displayTextArray)
+    }
     //  buttons actions
     private func clearDisplay() -> Void{
-        displayText = "0"
+        displayTextArray = ["0"]
+        updateDisplayText()
     }
     private func clearOnedigit() -> Void{
-        if displayText.first == "-" && displayText.count < 3{
+        if displayTextArray[0] == "-" && displayTextArray.count < 3{
             clearDisplay()
-        }else if displayText != "0" && displayText.count > 1{
-            displayText.remove(at: displayText.index(before: displayText.endIndex))
-        }else if displayText != "0"{
-            displayText = "0"
+        }else if displayTextArray != ["0"] && displayTextArray.count > 1 {
+            displayTextArray.removeLast()
+            if displayTextArray.isEmpty {
+                displayTextArray = ["0"]
+            }
+            updateDisplayText()
+        }else if displayTextArray != ["0"] {
+            displayTextArray = ["0"]
+            updateDisplayText()
         }
     }
     private func changeSign() -> Void{//    make a case that usr can change sign later after "*/+-"
-        if displayText.first == "-"{
-            displayText.remove(at: displayText.startIndex)
-        }else if displayText.first != "-" && displayText.count > 1{// -0 case
-            displayText.insert("-", at: displayText.startIndex)
+        if displayTextArray.first == "-" {
+            displayTextArray.remove(at: 0)
+        }else if displayTextArray != ["0"] {
+            displayTextArray.insert("-", at: 0)
         }
+        updateDisplayText()
     }
     private func appendToDisplay(_ digit: String){
-        if displayText == "0" && digit == "%"{
-            displayText += digit
-        }else if displayText == "0" {
-            displayText = digit
-        }else {
-            displayText += digit
+        if displayTextArray == ["0"] && digit != "%"{
+            displayTextArray = Array(digit)
+        }else{
+            displayTextArray.append(contentsOf: digit)
         }
+        updateDisplayText()
     }
-    //  math actions
+    
+    // FIND 2 NUMBERS BETWEEN OPERATOR
+    private func findNumbers(_ index: Int) -> (Int, Int, String, String){
+        var num1Str : String = "", num2Str : String = "", start : Int = 0, end : Int = 0
+        for i in stride(from: index - 1, to: -1, by: -1){
+            if i == 0{start = 0}
+            if displayTextArray[i].isNumber || displayTextArray[i] == "."{
+                num1Str = String(displayTextArray[i]) + num1Str
+            }else{
+                start = i
+            }
+        }
+        
+        for i in index + 1..<displayTextArray.count{
+            if displayTextArray[i].isNumber || displayTextArray[i] == "."{
+                num2Str = num2Str + String(displayTextArray[i])
+                end = i
+            }
+        }
+        return (start, end, num1Str, num2Str)
+    }
+    
+    //  MATH ACTIONS
+    
     private func percent(number: String, percentIndex: Int) {
         let num = number.replacingOccurrences(of: "%", with: "")
         if let numDouble = Double(num) {
             let result = numDouble / 100
-            displayText = String(result)
-        } else {
-            displayText = "Error"
+            displayTextArray = Array(String(result))
+            updateDisplayText()
+        }else{
+            displayTextArray = Array("Error")
+            updateDisplayText()
         }
     }
-    private func divide() -> Void{
+    private func modulo(_ moduloIndex: Int) -> Void{
+        var num1Str : String, num2Str : String, start : Int, end : Int
         
+        (start, end, num1Str, num2Str) = findNumbers(moduloIndex)
+        
+        guard let num1 = Int(num1Str), let num2 = Int(num2Str), num2 != 0 else{
+            displayTextArray = Array("Error") // zero divide handling
+            updateDisplayText()
+            return
+        }
+        
+        let rest = num1 % num2
+        let restStr = Array(String(rest))
+        //changing array
+        displayTextArray.replaceSubrange(start...end, with: restStr)
+        updateDisplayText()
+    }
+    private func divide(_ divideIndex: Int) -> Void{
+        var num1Str : String, num2Str : String, start : Int, end : Int
+        (start, end, num1Str, num2Str) = findNumbers(divideIndex)
+        
+        guard let num1 = Int(num1Str), let num2 = Int(num2Str), num2 != 0 else{
+            displayTextArray = Array("Error") // zero divide handling
+            updateDisplayText()
+            return
+        }
+        
+        let ret = num1 / num2
+        let retStr = Array(String(ret))
+        
+        displayTextArray.replaceSubrange(start...end, with: retStr)
+        
+        updateDisplayText()
     }
     private func multiply() -> Void{
         
@@ -108,22 +176,39 @@ struct ContentView: View {
         
     }
     //  calculate func
-    private func calculateMain() {
-        let charExample = "x/+-"
-        for (i, char) in displayText.enumerated() {
+    private func calculateFirst() {
+        for (i, char) in displayTextArray.enumerated() {
+            if i == 0{continue}
             if char == "%" {
-                var subDisplayText: String = ""
-                for j in stride(from: i - 1, to: -1, by: -1) {
-                    let index = displayText.index(displayText.startIndex, offsetBy: j)
-                    if charExample.contains(displayText[index]) || j == 0 {
-                        let startindex = displayText.index(displayText.startIndex, offsetBy: j == 0 ? 0 : j + 1)
-                        let endindex = displayText.index(displayText.startIndex, offsetBy: i)
-                        subDisplayText = String(displayText[startindex..<endindex])
-                        percent(number: subDisplayText, percentIndex: i)
-                        break
+                if displayTextArray[i-1].isNumber && displayTextArray[i+1].isNumber{// check if modulo
+                    modulo(i)
+                }else{
+                    var subDisplayText: String = ""
+                    for j in stride(from: i - 1, through: 0, by: -1) {
+                        if charExample.contains(displayTextArray[j]) || j == 0 {
+                            let startIndex = (j == 0) ? 0 : j + 1
+                            subDisplayText = String(displayTextArray[startIndex..<i])
+                            percent(number: subDisplayText, percentIndex: i)
+                            break
+                        }
                     }
                 }
             }
+            if char == "÷" {
+                divide(i)
+            }
+            if char == "x" {
+                multiply()
+            }
+            if char == "+" {
+                plus()
+            }
+            if char == "-" {
+                minus()
+            }
+        }
+        for (i, char) in displayTextArray.enumerated() {// go through array to calculate and show result
+            
         }
     }
 
