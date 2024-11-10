@@ -10,7 +10,7 @@ import SwiftUI
 struct ContentView: View {
     // Przechowujemy wyświetlaną wartość
     @State private var displayText : String = "0"
-    @State private var displayTextArray : [Character] = []
+    @State private var displayTextArray : [Character] = ["0"]
     
     //private var digitsArray : [String] = []
     //private var operatorsArray : [String] = []
@@ -90,6 +90,9 @@ struct ContentView: View {
         updateDisplayText()
     }
     private func appendToDisplay(_ digit: String){
+        if displayTextArray[0] == "E"{
+            if charExample.contains(digit){}else{displayTextArray = Array(digit)}
+        }
         if displayTextArray == ["0"] && digit != "%"{
             displayTextArray = Array(digit)
         }else{
@@ -121,16 +124,29 @@ struct ContentView: View {
     
     //  MATH ACTIONS
     
-    private func percent(number: String, percentIndex: Int) {
-        let num = number.replacingOccurrences(of: "%", with: "")
-        if let numDouble = Double(num) {
-            let result = numDouble / 100
-            displayTextArray = Array(String(result))
-            updateDisplayText()
-        }else{
+    private func percent(_ percentIndex: Int) {
+        var num1Str: String, num2Str: String, start: Int, end: Int
+        (start, end, num1Str, num2Str) = findNumbers(percentIndex)
+        
+        guard let num1 = Double(num1Str), let num2 = Double(num2Str) else {
             displayTextArray = Array("Error")
             updateDisplayText()
+            return
         }
+        
+        // Sprawdź kontekst użycia operatora procentowego
+        if percentIndex < displayTextArray.count - 1 && displayTextArray[percentIndex + 1].isNumber {
+            // 20%x50= case
+            let result = (num1 / 100) * num2
+            let resultStr = Array(String(result))
+            displayTextArray.replaceSubrange(start...end, with: resultStr)
+        } else if percentIndex > 0 && displayTextArray[percentIndex - 1].isNumber {
+            // 50x20%= case
+            let result = (num2 / 100) * num1
+            let resultStr = Array(String(result))
+            displayTextArray.replaceSubrange(start...end, with: resultStr)
+        }
+        updateDisplayText()
     }
     private func modulo(_ moduloIndex: Int) -> Void{
         var num1Str : String, num2Str : String, start : Int, end : Int
@@ -143,37 +159,70 @@ struct ContentView: View {
             return
         }
         
-        let rest = num1 % num2
-        let restStr = Array(String(rest))
+        let ret = num1 % num2
+        let retStr = Array(String(ret))
         //changing array
-        displayTextArray.replaceSubrange(start...end, with: restStr)
+        displayTextArray.replaceSubrange(start...end, with: retStr)
+        updateDisplayText()
+    }
+    private func multiply(_ multiplyIndex: Int) -> Void{
+        var num1Str : String, num2Str : String, start : Int, end : Int
+        (start, end, num1Str, num2Str) = findNumbers(multiplyIndex)
+        guard let num1 = Int(num1Str), let num2 = Int(num2Str) else{
+            displayTextArray = Array("Error")
+            updateDisplayText()
+            return
+        }
+        let ret = num1 * num2
+        let retStr = Array(String(ret))
+        
+        displayTextArray.replaceSubrange(start...end, with: retStr)
         updateDisplayText()
     }
     private func divide(_ divideIndex: Int) -> Void{
         var num1Str : String, num2Str : String, start : Int, end : Int
         (start, end, num1Str, num2Str) = findNumbers(divideIndex)
         
-        guard let num1 = Int(num1Str), let num2 = Int(num2Str), num2 != 0 else{
+        guard let num1 = Double(num1Str), let num2 = Double(num2Str), num2 != 0 else{
             displayTextArray = Array("Error") // zero divide handling
             updateDisplayText()
             return
         }
         
-        let ret = num1 / num2
+        let ret : Double = num1 / num2
         let retStr = Array(String(ret))
         
         displayTextArray.replaceSubrange(start...end, with: retStr)
         
         updateDisplayText()
     }
-    private func multiply() -> Void{
+    private func plus(_ plusIndex: Int) -> Void{
+        var num1Str : String, num2Str : String, start : Int, end : Int
+        (start, end, num1Str, num2Str) = findNumbers(plusIndex)
+        guard let num1 = Int(num1Str), let num2 = Int(num2Str) else{
+            displayTextArray = Array("Error")
+            updateDisplayText()
+            return
+        }
+        let ret = num1 + num2
+        let retStr = Array(String(ret))
         
+        displayTextArray.replaceSubrange(start...end, with: retStr)
+        updateDisplayText()
     }
-    private func plus() -> Void{
+    private func minus(_ minusIndex: Int) -> Void{
+        var num1Str : String, num2Str : String, start : Int, end : Int
+        (start, end, num1Str, num2Str) = findNumbers(minusIndex)
+        guard let num1 = Int(num1Str), let num2 = Int(num2Str) else{
+            displayTextArray = Array("Error")
+            updateDisplayText()
+            return
+        }
+        let ret = num1 - num2
+        let retStr = Array(String(ret))
         
-    }
-    private func minus() -> Void{
-        
+        displayTextArray.replaceSubrange(start...end, with: retStr)
+        updateDisplayText()
     }
     //  calculate func
     private func calculateFirst() {
@@ -183,32 +232,21 @@ struct ContentView: View {
                 if displayTextArray[i-1].isNumber && displayTextArray[i+1].isNumber{// check if modulo
                     modulo(i)
                 }else{
-                    var subDisplayText: String = ""
-                    for j in stride(from: i - 1, through: 0, by: -1) {
-                        if charExample.contains(displayTextArray[j]) || j == 0 {
-                            let startIndex = (j == 0) ? 0 : j + 1
-                            subDisplayText = String(displayTextArray[startIndex..<i])
-                            percent(number: subDisplayText, percentIndex: i)
-                            break
-                        }
-                    }
+                    percent(i)
                 }
             }
             if char == "÷" {
                 divide(i)
             }
             if char == "x" {
-                multiply()
+                multiply(i)
             }
             if char == "+" {
-                plus()
+                plus(i)
             }
             if char == "-" {
-                minus()
+                minus(i)
             }
-        }
-        for (i, char) in displayTextArray.enumerated() {// go through array to calculate and show result
-            
         }
     }
 
