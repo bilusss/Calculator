@@ -12,8 +12,6 @@ struct ContentView: View {
     @State private var displayText : String = "0"
     @State private var displayTextArray : [Character] = ["0"]
     
-    //private var digitsArray : [String] = []
-    //private var operatorsArray : [String] = []
     let charExample = "x/+-"
     
     var body : some View {
@@ -29,31 +27,31 @@ struct ContentView: View {
                     CalculatorButton(title:"⌫", action: {clearOnedigit()})
                     CalculatorButton(title:"AC", action: {clearDisplay()})
                     CalculatorButton(title:"±", action: {changeSign()})
-                    CalculatorButton(title:"%", action: {appendToDisplay("%")})
+                    CalculatorButton(title:"%", action: {appendToDisplaySign("%")})
                 }
                 HStack(spacing: 10){
-                    CalculatorButton(title:"1", action: {appendToDisplay("1")})
-                    CalculatorButton(title:"2", action: {appendToDisplay("2")})
-                    CalculatorButton(title:"3", action: {appendToDisplay("3")})
-                    CalculatorButton(title:"÷", action: {appendToDisplay("÷")})
+                    CalculatorButton(title:"1", action: {appendToDisplayNumber("1")})
+                    CalculatorButton(title:"2", action: {appendToDisplayNumber("2")})
+                    CalculatorButton(title:"3", action: {appendToDisplayNumber("3")})
+                    CalculatorButton(title:"÷", action: {appendToDisplaySign("÷")})
                 }
                 HStack(spacing: 10){
-                    CalculatorButton(title:"4", action: {appendToDisplay("4")})
-                    CalculatorButton(title:"5", action: {appendToDisplay("5")})
-                    CalculatorButton(title:"6", action: {appendToDisplay("6")})
-                    CalculatorButton(title:"x", action: {appendToDisplay("x")})
+                    CalculatorButton(title:"4", action: {appendToDisplayNumber("4")})
+                    CalculatorButton(title:"5", action: {appendToDisplayNumber("5")})
+                    CalculatorButton(title:"6", action: {appendToDisplayNumber("6")})
+                    CalculatorButton(title:"x", action: {appendToDisplaySign("x")})
                 }
                 HStack(spacing: 10){
-                    CalculatorButton(title:"7", action: {appendToDisplay("7")})
-                    CalculatorButton(title:"8", action: {appendToDisplay("8")})
-                    CalculatorButton(title:"9", action: {appendToDisplay("9")})
-                    CalculatorButton(title:"+", action: {appendToDisplay("+")})
+                    CalculatorButton(title:"7", action: {appendToDisplayNumber("7")})
+                    CalculatorButton(title:"8", action: {appendToDisplayNumber("8")})
+                    CalculatorButton(title:"9", action: {appendToDisplayNumber("9")})
+                    CalculatorButton(title:"+", action: {appendToDisplaySign("+")})
                 }
                 HStack(spacing: 10){
-                    CalculatorButton(title:"=", action: {calculateFirst()})
-                    CalculatorButton(title:"0", action: {appendToDisplay("0")})
-                    CalculatorButton(title:",", action: {appendToDisplay(",")})
-                    CalculatorButton(title:"-", action: {appendToDisplay("-")})
+                    CalculatorButton(title:"=", action: {calculate()})
+                    CalculatorButton(title:"0", action: {appendToDisplayNumber("0")})
+                    CalculatorButton(title:",", action: {appendToDisplaySign(",")})
+                    CalculatorButton(title:"-", action: {appendToDisplaySign("-")})
                 }
             }
         }
@@ -89,14 +87,46 @@ struct ContentView: View {
         }
         updateDisplayText()
     }
-    private func appendToDisplay(_ digit: String){
+    
+    //  APPEND TO DISPAY SIGN & NUMBER
+    private func appendToDisplaySign(_ digit: String) -> Void{
         if displayTextArray[0] == "E"{
-            if charExample.contains(digit){}else{displayTextArray = Array(digit)}
+            return
+        }else if digit == "."{
+            if displayTextArray.last == "."{
+                return
+            }else{
+                displayTextArray.append(contentsOf: digit)
+            }
+        }else if charExample.contains(digit){
+            if digit == "-" && (displayTextArray.last == "÷" || displayTextArray.last == "x"){
+                displayTextArray.append(contentsOf: digit)
+                updateDisplayText()
+            }
         }
-        if displayTextArray == ["0"] && digit != "%"{
-            displayTextArray = Array(digit)
-        }else{
-            displayTextArray.append(contentsOf: digit)
+        
+//        if charExample.contains(digit){
+//            if charExample.contains(displayTextArray.last!){
+//                return
+//            }else if displayTextArray.count == 1 && displayTextArray.first == "0"{
+//                displayTextArray.append(contentsOf: digit)
+//                updateDisplayText()
+//            }
+//        }
+//        if displayTextArray == ["0"] && digit != "%"{
+//            displayTextArray = Array(digit)
+//            updateDisplayText()
+//        }else{
+//            displayTextArray.append(contentsOf: digit)
+//        }
+        updateDisplayText()
+    }
+    
+    private func appendToDisplayNumber(_ number: Character) -> Void{
+        if displayTextArray[0] == "E"{
+            displayTextArray = [number]
+        }else if displayTextArray == ["0"]{
+            displayTextArray = [number]
         }
         updateDisplayText()
     }
@@ -124,7 +154,7 @@ struct ContentView: View {
     
     //  MATH ACTIONS
     
-    private func percent(_ percentIndex: Int) {
+    private func percent(_ percentIndex: Int) -> Void {
         var num1Str: String, num2Str: String, start: Int, end: Int
         (start, end, num1Str, num2Str) = findNumbers(percentIndex)
         
@@ -225,11 +255,11 @@ struct ContentView: View {
         updateDisplayText()
     }
     //  calculate func
-    private func calculateFirst() {
+    private func calculate() -> Void{
         for (i, char) in displayTextArray.enumerated() {
             if i == 0{continue}
             if char == "%" {
-                if displayTextArray[i-1].isNumber && displayTextArray[i+1].isNumber{// check if modulo
+                if displayTextArray[i-1].isNumber && displayTextArray[i+1].isNumber{// check if modulo, if not then percent
                     modulo(i)
                 }else{
                     percent(i)
