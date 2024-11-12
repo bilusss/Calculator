@@ -11,6 +11,7 @@ struct ContentView: View {
     // Przechowujemy wyświetlaną wartość
     @State private var displayText : String = "0"
     @State private var displayTextArray : [Character] = ["0"]
+    @State private var signCount: Int = 0
     
     let charExample = "x/+-"
     
@@ -90,6 +91,13 @@ struct ContentView: View {
     
     //  APPEND TO DISPAY SIGN & NUMBER
     private func appendToDisplaySign(_ digit: String) -> Void{
+        if charExample.contains(digit) && signCount == 0{
+            signCount = 1
+        }else if charExample.contains(digit) && signCount == 1{
+            calculate()
+            appendToDisplaySign(digit)
+            return
+        }
         if displayTextArray[0] == "E"{
             return
         }else if digit == "."{
