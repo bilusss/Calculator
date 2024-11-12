@@ -13,7 +13,7 @@ struct ContentView: View {
     @State private var displayTextArray : [Character] = ["0"]
     @State private var signCount: Int = 0
     
-    let charExample = "x/+-"
+    let charExample = "x÷+-"
     
     var body : some View {
         VStack(spacing: 20){
@@ -51,7 +51,7 @@ struct ContentView: View {
                 HStack(spacing: 10){
                     CalculatorButton(title:"=", action: {calculate()})
                     CalculatorButton(title:"0", action: {appendToDisplayNumber("0")})
-                    CalculatorButton(title:",", action: {appendToDisplaySign(",")})
+                    CalculatorButton(title:".", action: {appendToDisplaySign(".")})
                     CalculatorButton(title:"-", action: {appendToDisplaySign("-")})
                 }
             }
@@ -91,16 +91,22 @@ struct ContentView: View {
     
     //  APPEND TO DISPAY SIGN & NUMBER
     private func appendToDisplaySign(_ digit: String) -> Void{
-        if charExample.contains(digit) && signCount == 0{
-            signCount = 1
-        }else if charExample.contains(digit) && signCount == 1{
-            calculate()
-            appendToDisplaySign(digit)
-            return
+        if charExample.contains(digit){
+            if signCount == 0{
+                signCount = 1
+            }else{
+                calculate()
+                appendToDisplaySign(digit)
+                return
+            }
         }
         if displayTextArray[0] == "E"{
             return
-        }else if digit == "."{
+        }else if {
+            
+        }else if digit == "%"{
+            displayTextArray.append("%")
+        }else if digit == "."{ // point case
             if displayTextArray.last == "."{
                 return
             }else{
@@ -110,23 +116,10 @@ struct ContentView: View {
             if digit == "-" && (displayTextArray.last == "÷" || displayTextArray.last == "x"){
                 displayTextArray.append(contentsOf: digit)
                 updateDisplayText()
+            }else{
+                displayTextArray.append(contentsOf: digit)
             }
         }
-        
-//        if charExample.contains(digit){
-//            if charExample.contains(displayTextArray.last!){
-//                return
-//            }else if displayTextArray.count == 1 && displayTextArray.first == "0"{
-//                displayTextArray.append(contentsOf: digit)
-//                updateDisplayText()
-//            }
-//        }
-//        if displayTextArray == ["0"] && digit != "%"{
-//            displayTextArray = Array(digit)
-//            updateDisplayText()
-//        }else{
-//            displayTextArray.append(contentsOf: digit)
-//        }
         updateDisplayText()
     }
     
@@ -135,11 +128,14 @@ struct ContentView: View {
             displayTextArray = [number]
         }else if displayTextArray == ["0"]{
             displayTextArray = [number]
+        }else {
+            displayTextArray.append(number)
         }
         updateDisplayText()
     }
     
     // FIND 2 NUMBERS BETWEEN OPERATOR
+    
     private func findNumbers(_ index: Int) -> (Int, Int, String, String){
         var num1Str : String = "", num2Str : String = "", start : Int = 0, end : Int = 0
         for i in stride(from: index - 1, to: -1, by: -1){
@@ -167,7 +163,7 @@ struct ContentView: View {
         (start, end, num1Str, num2Str) = findNumbers(percentIndex)
         
         guard let num1 = Double(num1Str), let num2 = Double(num2Str) else {
-            displayTextArray = Array("Error")
+            displayTextArray = Array("Error : Failed to conv to Double")
             updateDisplayText()
             return
         }
@@ -184,6 +180,7 @@ struct ContentView: View {
             let resultStr = Array(String(result))
             displayTextArray.replaceSubrange(start...end, with: resultStr)
         }
+        shortage()
         updateDisplayText()
     }
     private func modulo(_ moduloIndex: Int) -> Void{
@@ -192,7 +189,7 @@ struct ContentView: View {
         (start, end, num1Str, num2Str) = findNumbers(moduloIndex)
         
         guard let num1 = Int(num1Str), let num2 = Int(num2Str), num2 != 0 else{
-            displayTextArray = Array("Error") // zero divide handling
+            displayTextArray = Array("Error : Division by zero") // zero divide handling
             updateDisplayText()
             return
         }
@@ -201,13 +198,14 @@ struct ContentView: View {
         let retStr = Array(String(ret))
         //changing array
         displayTextArray.replaceSubrange(start...end, with: retStr)
+        shortage()
         updateDisplayText()
     }
     private func multiply(_ multiplyIndex: Int) -> Void{
         var num1Str : String, num2Str : String, start : Int, end : Int
         (start, end, num1Str, num2Str) = findNumbers(multiplyIndex)
-        guard let num1 = Int(num1Str), let num2 = Int(num2Str) else{
-            displayTextArray = Array("Error")
+        guard let num1 = Double(num1Str), let num2 = Double(num2Str) else{
+            displayTextArray = Array("Error : pojebane znaky")
             updateDisplayText()
             return
         }
@@ -215,6 +213,7 @@ struct ContentView: View {
         let retStr = Array(String(ret))
         
         displayTextArray.replaceSubrange(start...end, with: retStr)
+        shortage()
         updateDisplayText()
     }
     private func divide(_ divideIndex: Int) -> Void{
@@ -231,13 +230,13 @@ struct ContentView: View {
         let retStr = Array(String(ret))
         
         displayTextArray.replaceSubrange(start...end, with: retStr)
-        
+        shortage()
         updateDisplayText()
     }
     private func plus(_ plusIndex: Int) -> Void{
         var num1Str : String, num2Str : String, start : Int, end : Int
         (start, end, num1Str, num2Str) = findNumbers(plusIndex)
-        guard let num1 = Int(num1Str), let num2 = Int(num2Str) else{
+        guard let num1 = Double(num1Str), let num2 = Double(num2Str) else{
             displayTextArray = Array("Error")
             updateDisplayText()
             return
@@ -246,12 +245,14 @@ struct ContentView: View {
         let retStr = Array(String(ret))
         
         displayTextArray.replaceSubrange(start...end, with: retStr)
+        shortage()
         updateDisplayText()
     }
     private func minus(_ minusIndex: Int) -> Void{
         var num1Str : String, num2Str : String, start : Int, end : Int
         (start, end, num1Str, num2Str) = findNumbers(minusIndex)
-        guard let num1 = Int(num1Str), let num2 = Int(num2Str) else{
+        
+        guard let num1 = Double(num1Str), let num2 = Double(num2Str) else{
             displayTextArray = Array("Error")
             updateDisplayText()
             return
@@ -260,8 +261,17 @@ struct ContentView: View {
         let retStr = Array(String(ret))
         
         displayTextArray.replaceSubrange(start...end, with: retStr)
+        shortage()
         updateDisplayText()
     }
+    // func shortage
+    
+    private func shortage() -> Void{
+        if displayTextArray.last == "0" && displayTextArray.firstIndex(of: ".") == displayTextArray.count-2{
+            displayTextArray.replaceSubrange(displayTextArray.count-2...displayTextArray.count-1, with: Array(""))
+        }
+    }
+    
     //  calculate func
     private func calculate() -> Void{
         for (i, char) in displayTextArray.enumerated() {
@@ -286,6 +296,7 @@ struct ContentView: View {
                 minus(i)
             }
         }
+        signCount = 0
     }
 
 }
