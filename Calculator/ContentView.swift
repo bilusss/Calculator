@@ -59,6 +59,7 @@ struct ContentView: View {
         .padding()
     }
     private func updateDisplayText() -> Void {
+        shortage()
         displayText = String(displayTextArray)
     }
     //  buttons actions
@@ -102,8 +103,6 @@ struct ContentView: View {
         }
         if displayTextArray[0] == "E"{
             return
-        }else if {
-            
         }else if digit == "%"{
             displayTextArray.append("%")
         }else if digit == "."{ // point case
@@ -134,13 +133,14 @@ struct ContentView: View {
         updateDisplayText()
     }
     
+    
     // FIND 2 NUMBERS BETWEEN OPERATOR
     
     private func findNumbers(_ index: Int) -> (Int, Int, String, String){
         var num1Str : String = "", num2Str : String = "", start : Int = 0, end : Int = 0
         for i in stride(from: index - 1, to: -1, by: -1){
             if i == 0{start = 0}
-            if displayTextArray[i].isNumber || displayTextArray[i] == "."{
+            if displayTextArray[i].isNumber || displayTextArray[i] == "." || displayTextArray[i] == "%"{
                 num1Str = String(displayTextArray[i]) + num1Str
             }else{
                 start = i
@@ -148,7 +148,7 @@ struct ContentView: View {
         }
         
         for i in index + 1..<displayTextArray.count{
-            if displayTextArray[i].isNumber || displayTextArray[i] == "."{
+            if displayTextArray[i].isNumber || displayTextArray[i] == "." || displayTextArray[i] == "%"{
                 num2Str = num2Str + String(displayTextArray[i])
                 end = i
             }
@@ -162,27 +162,32 @@ struct ContentView: View {
         var num1Str: String, num2Str: String, start: Int, end: Int
         (start, end, num1Str, num2Str) = findNumbers(percentIndex)
         
-        guard let num1 = Double(num1Str), let num2 = Double(num2Str) else {
-            displayTextArray = Array("Error : Failed to conv to Double")
+        if num1Str.contains("%"){
+            num1Str.removeLast()
+        }else if num2Str.contains("%"){
+            num2Str.removeLast()
+        }
+        
+        guard let num1 = Double(num1Str) else {
+            displayTextArray = Array("Error : Failed to convert to Double")
             updateDisplayText()
             return
         }
         
-        // Sprawdź kontekst użycia operatora procentowego
-        if percentIndex < displayTextArray.count - 1 && displayTextArray[percentIndex + 1].isNumber {
-            // 20%x50= case
-            let result = (num1 / 100) * num2
+        if let num2 = Double(num2Str), percentIndex > 0, displayTextArray[percentIndex - 1].isNumber {
+            // 10x20%
+            let result = num1 * (num2 / 100)
             let resultStr = Array(String(result))
             displayTextArray.replaceSubrange(start...end, with: resultStr)
-        } else if percentIndex > 0 && displayTextArray[percentIndex - 1].isNumber {
-            // 50x20%= case
-            let result = (num2 / 100) * num1
+        } else {
+            // 20%
+            let result = num1 / 100
             let resultStr = Array(String(result))
-            displayTextArray.replaceSubrange(start...end, with: resultStr)
+            displayTextArray.replaceSubrange(start...(percentIndex), with: resultStr)
         }
-        shortage()
         updateDisplayText()
     }
+
     private func modulo(_ moduloIndex: Int) -> Void{
         var num1Str : String, num2Str : String, start : Int, end : Int
         
@@ -198,14 +203,13 @@ struct ContentView: View {
         let retStr = Array(String(ret))
         //changing array
         displayTextArray.replaceSubrange(start...end, with: retStr)
-        shortage()
         updateDisplayText()
     }
     private func multiply(_ multiplyIndex: Int) -> Void{
         var num1Str : String, num2Str : String, start : Int, end : Int
         (start, end, num1Str, num2Str) = findNumbers(multiplyIndex)
         guard let num1 = Double(num1Str), let num2 = Double(num2Str) else{
-            displayTextArray = Array("Error : pojebane znaky")
+            displayTextArray = Array("Error : Wrong Sign")
             updateDisplayText()
             return
         }
@@ -213,7 +217,6 @@ struct ContentView: View {
         let retStr = Array(String(ret))
         
         displayTextArray.replaceSubrange(start...end, with: retStr)
-        shortage()
         updateDisplayText()
     }
     private func divide(_ divideIndex: Int) -> Void{
@@ -230,7 +233,6 @@ struct ContentView: View {
         let retStr = Array(String(ret))
         
         displayTextArray.replaceSubrange(start...end, with: retStr)
-        shortage()
         updateDisplayText()
     }
     private func plus(_ plusIndex: Int) -> Void{
@@ -245,7 +247,6 @@ struct ContentView: View {
         let retStr = Array(String(ret))
         
         displayTextArray.replaceSubrange(start...end, with: retStr)
-        shortage()
         updateDisplayText()
     }
     private func minus(_ minusIndex: Int) -> Void{
@@ -261,7 +262,6 @@ struct ContentView: View {
         let retStr = Array(String(ret))
         
         displayTextArray.replaceSubrange(start...end, with: retStr)
-        shortage()
         updateDisplayText()
     }
     // func shortage
@@ -298,7 +298,6 @@ struct ContentView: View {
         }
         signCount = 0
     }
-
 }
 
 struct CalculatorButton: View {
